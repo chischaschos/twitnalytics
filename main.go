@@ -1,26 +1,35 @@
 package main
 
 import (
+  "flag"
   "fmt"
-  "github.com/chischaschos/twitnalytics/authorizer"
+  "github.com/chischaschos/twitnalytics/twitter"
   "os"
 )
 
+var username string
+
+func init() {
+  flag.StringVar(&username, "u", "the_user_name", "the user name whose timeline we are gonna play with")
+}
+
 func main() {
-  fmt.Println("On")
-  consumerKey := os.Getenv("CONSUMER_KEY")
-  consumerSecret := os.Getenv("CONSUMER_SECRET")
+  flag.Parse()
 
-  authorizer := authorizer.New(consumerKey, consumerSecret)
-  authorizer.Do()
-  pullError := authorizer.PullTweets("chischaschos")
+  if username == "the_user_name" {
+    flag.PrintDefaults()
+  } else {
 
-  if pullError != nil {
-    fmt.Printf("Problem!!!: %s\n", pullError.Error())
+    consumerKey := os.Getenv("CONSUMER_KEY")
+    consumerSecret := os.Getenv("CONSUMER_SECRET")
+
+    twitter := twitter.New(consumerKey, consumerSecret)
+    tweets, pullError := twitter.PullTweetsOf(username)
+
+    fmt.Println(pullError)
+
+    for _, tweet := range tweets {
+      fmt.Println(tweet)
+    }
   }
-
-  for _, tweet := range authorizer.Tweets {
-    fmt.Println(tweet)
-  }
-  //tweetsWithSimilarity := authorization.CalculateSimilarity("chischaschos")
 }

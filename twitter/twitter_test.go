@@ -1,4 +1,4 @@
-package authorizer
+package twitter
 
 import (
   "fmt"
@@ -7,13 +7,13 @@ import (
   "net/http/httptest"
 )
 
-func TestFailedAuthorize(t *testing.T) {
+func TestFailedAuthenticate(t *testing.T) {
   testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, `{"errors":[{"code":99,"label":"authenticity_token_error","message":"Unable to verify your credentials"}]}`)
   }))
 
-  authorizer := Authorization{ConsumerKey: "ASD", ConsumerSecret: "ASD", AccessToken: "", Tweets: nil, Endpoints: Endpoints{testServer.URL, ""}}
-  authError := authorizer.Do()
+  twitter := Twitter{consumerKey: "ASD", consumerSecret: "ASD", endpoints: Endpoints{testServer.URL, ""}}
+  authError := twitter.authenticate()
 
   if authError == nil {
     t.Error("An error was expected")
@@ -21,31 +21,31 @@ func TestFailedAuthorize(t *testing.T) {
     t.Error(authError.Error())
   }
 
-  if authorizer.AccessToken != "" {
+  if twitter.accessToken != "" {
     t.Error("A token should not be returned")
   }
 
 }
 
-func TestSuccesfulAuthorize(t *testing.T) {
+func TestSuccesfulAuthenticate(t *testing.T) {
   testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, `{"access_token":"i'm valid", "token_type":"bearer"}`)
   }))
 
-  authorizer := Authorization{ConsumerKey: "ASD", ConsumerSecret: "ASD", AccessToken: "", Tweets: nil, Endpoints: Endpoints{testServer.URL, ""}}
-  authError := authorizer.Do()
+  twitter := Twitter{consumerKey: "ASD", consumerSecret: "ASD", endpoints: Endpoints{testServer.URL, ""}}
+  authError := twitter.authenticate()
 
   if authError != nil {
     t.Error("No error was expected, but:", authError.Error())
   }
 
-  if authorizer.AccessToken != "i'm valid" {
-    t.Error("A token should be returned", authorizer.AccessToken)
+  if twitter.accessToken != "i'm valid" {
+    t.Error("A token should be returned", twitter.accessToken)
   }
 
 }
 
-func TestPullTweets(t *testing.T) {
+func TestSuccessfulPullTweetsOf(t *testing.T) {
   authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, `{"access_token":"i'm valid", "token_type":"bearer"}`)
   }))
@@ -54,16 +54,15 @@ func TestPullTweets(t *testing.T) {
     fmt.Fprintln(w, `[{"text":"t1"}, {"text":"t3"}]`)
   }))
 
-  authorizer := Authorization{ConsumerKey: "ASD", ConsumerSecret: "ASD", AccessToken: "", Tweets: nil, Endpoints: Endpoints{authServer.URL, tweetsServer.URL}}
-  authError := authorizer.Do()
+  twitter := Twitter{consumerKey: "ASD", consumerSecret: "ASD", endpoints: Endpoints{authServer.URL, tweetsServer.URL}}
+  tweets, error := twitter.PullTweetsOf("chischaschos")
 
-  if authError != nil {
-    t.Fatal("Can't continue without an access token")
+  if error != nil {
+    t.Fatal("Tweets couldn't be pulled", error.Error())
   }
 
-  pullError := authorizer.PullTweets("chischaschos")
-
-  if pullError != nil {
-    t.Fatal("Tweets couldn't be pulled", pullError.Error())
+  if len(tweets) != 2 {
+    t.Fatal("Wrong number of tweets retrieved")
   }
+
 }
