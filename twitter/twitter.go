@@ -38,6 +38,12 @@ type Tweet struct {
   Id int64
 }
 
+type TermDoc struct {
+  TweetId int64
+  Term string
+  Count int
+}
+
 // PullTweetsOf the retrieves a parameter user tweets
 func (twitter *Twitter) PullTweetsOf(user string) ([]Tweet, error) {
   authError := twitter.authenticate()
