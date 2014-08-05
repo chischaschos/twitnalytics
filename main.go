@@ -3,7 +3,9 @@ package main
 import (
   "flag"
   "fmt"
-  "github.com/chischaschos/twitnalytics/twitter"
+  tw "github.com/chischaschos/twitnalytics/twitter"
+  "github.com/chischaschos/twitnalytics/repository"
+  "github.com/chischaschos/twitnalytics/data"
   "os"
 )
 
@@ -23,7 +25,7 @@ func main() {
     consumerKey := os.Getenv("CONSUMER_KEY")
     consumerSecret := os.Getenv("CONSUMER_SECRET")
 
-    twitter := twitter.New(consumerKey, consumerSecret)
+    twitter := tw.New(consumerKey, consumerSecret)
     tweets, pullError := twitter.PullTweetsOf(username)
 
     fmt.Println(pullError)
@@ -31,5 +33,13 @@ func main() {
     for _, tweet := range tweets {
       fmt.Println(tweet)
     }
+
+    if len(tweets) > 0 {
+      data.SyncTweets(username, tweets)
+    }
+
+    repository.TermsByUser(username, func(termDoc *tw.TermDoc) {
+      fmt.Printf("%v\n", termDoc)
+    })
   }
 }

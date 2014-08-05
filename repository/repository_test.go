@@ -3,9 +3,12 @@ package repository
 import (
   "fmt"
   "github.com/chischaschos/twitnalytics/twitter"
+  "os"
 )
 
 func ExampleTweetsByUser() {
+  os.Setenv("TWITNALYTICS-ENV", "test")
+
   Clear()
 
   tweets := []twitter.Tweet{

@@ -4,9 +4,12 @@ import (
   "github.com/chischaschos/twitnalytics/repository"
   "github.com/chischaschos/twitnalytics/twitter"
   "fmt"
+  "os"
 )
 
 func ExampleSyncTweets() {
+  os.Setenv("TWITNALYTICS-ENV", "test")
+
   repository.Clear()
 
   tweets := []twitter.Tweet{

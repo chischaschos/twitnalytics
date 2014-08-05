@@ -5,10 +5,13 @@ import (
   "database/sql"
   _ "code.google.com/p/go-sqlite/go1/sqlite3"
   "github.com/chischaschos/twitnalytics/twitter"
+  "os"
+  "os/user"
+  "path/filepath"
 )
 
 func DB() *sql.DB {
-  db, connErr := sql.Open("sqlite3", "twitnalytics")
+  db, connErr := sql.Open("sqlite3", dbName())
 
   if connErr != nil {
     panic(connErr)
@@ -26,6 +29,31 @@ func DB() *sql.DB {
   }
 
   return db
+}
+
+func dbName() string {
+  var dbName string
+
+  if os.Getenv("TWITNALYTICS-ENV") == "test" {
+    dbName = "../twitnalytics-db-test"
+
+  } else {
+    currentUser, userError := user.Current()
+
+    if userError != nil {
+      panic(userError)
+    }
+
+    dbName =  currentUser.HomeDir + "/.twitnalytics-db"
+  }
+
+  path, filepathError := filepath.Abs(dbName)
+
+  if filepathError != nil {
+    panic(filepathError)
+  }
+
+  return path
 }
 
 func TweetsByUser(username string, callback func(*twitter.Tweet))  {
