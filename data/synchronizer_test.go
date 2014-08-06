@@ -33,9 +33,9 @@ func ExampleSyncTweets() {
   // &{1 text 4}
   // &{1 super 2}
   // &{1 cool 2}
-  // &{1 bad 1}
-  // &{1 is 2}
-  // &{1 here 2}
-  // &{1 not 2}
-  // &{1 that 1}
+  // &{2 bad 1}
+  // &{3 is 2}
+  // &{3 here 2}
+  // &{4 not 2}
+  // &{5 that 1}
 }

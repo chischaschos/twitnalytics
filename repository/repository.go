@@ -118,7 +118,7 @@ func CreateTweets(username string, tweets []twitter.Tweet) {
   }
 }
 
-func SaveTerms(username string, termsDictionary map[string]int) {
+func SaveTerms(username string, termsDictionary map[string]*twitter.TermDoc) {
   db := DB()
   defer db.Close()
 
@@ -128,8 +128,8 @@ func SaveTerms(username string, termsDictionary map[string]int) {
     panic(stmtError)
   }
 
-  for key, value := range termsDictionary {
-    _, ie := insertStmt.Exec(username, 1, key, value)
+  for _, termDoc := range termsDictionary {
+    _, ie := insertStmt.Exec(username, termDoc.TweetId, termDoc.Term, termDoc.Count)
 
     if ie != nil {
       fmt.Println(ie)

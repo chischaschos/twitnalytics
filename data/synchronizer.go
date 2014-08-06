@@ -23,7 +23,7 @@ func SyncTweets(username string, tweets []twitter.Tweet) {
 }
 
 func extractTermsForUser(username string, quit chan<- int) {
-  termsDictionary := map[string]int{}
+  termsDictionary := map[string]*twitter.TermDoc{}
 
   repository.TweetsByUser(username, func(tweet *twitter.Tweet) {
     terms := strings.Split(tweet.Text, " ")
@@ -32,9 +32,9 @@ func extractTermsForUser(username string, quit chan<- int) {
       _, ok := termsDictionary[term]
 
       if ok {
-        termsDictionary[term]++
+        termsDictionary[term].Count++
       } else {
-        termsDictionary[term] = 1
+        termsDictionary[term] = &twitter.TermDoc{TweetId: tweet.Id, Term: term, Count: 1}
       }
     }
   })
