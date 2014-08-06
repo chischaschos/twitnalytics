@@ -45,24 +45,27 @@ func TestSuccesfulAuthenticate(t *testing.T) {
 
 }
 
-func TestSuccessfulPullTweetsOf(t *testing.T) {
+func ExamplePullTweetsOf() {
   authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, `{"access_token":"i'm valid", "token_type":"bearer"}`)
   }))
 
   tweetsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintln(w, `[{"text":"t1"}, {"text":"t3"}]`)
+    fmt.Fprintln(w, `[{"text":"t1", "id": 496697195907665921}, {"text":"t3", "id": 496697195907665921}]`)
   }))
 
   twitter := Twitter{consumerKey: "ASD", consumerSecret: "ASD", endpoints: Endpoints{authServer.URL, tweetsServer.URL}}
-  tweets, error := twitter.PullTweetsOf("chischaschos")
+  tweets, pullError := twitter.PullTweetsOf("chischaschos")
 
-  if error != nil {
-    t.Fatal("Tweets couldn't be pulled", error.Error())
+  fmt.Println("Error: ", pullError)
+
+  for _, tweet := range tweets {
+    fmt.Println(tweet)
   }
 
-  if len(tweets) != 2 {
-    t.Fatal("Wrong number of tweets retrieved")
-  }
+  // Output:
+  // Error:  <nil>
+  // {t1 496697195907665921}
+  // {t3 496697195907665921}
 
 }

@@ -17,15 +17,18 @@ func DB() *sql.DB {
     panic(connErr)
   }
 
-  _, execErr1 := db.Exec("CREATE TABLE IF NOT EXISTS tweets(id, text, username)")
-  _, execErr2 := db.Exec("CREATE TABLE IF NOT EXISTS tweet_terms(username, tweet_id, term, count)")
-
-  if execErr1 != nil {
-    panic(execErr1)
+  setupStatements := []string{
+    "CREATE TABLE IF NOT EXISTS tweets(id, text, username)",
+    "CREATE TABLE IF NOT EXISTS tweet_terms(username, tweet_id, term, count)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS unique_tweet_idx ON tweets(id, username)",
   }
 
-  if execErr2 != nil {
-    panic(execErr2)
+  for _, stmt := range setupStatements {
+    _, stmtError := db.Exec(stmt)
+
+    if stmtError != nil {
+      panic(stmtError)
+    }
   }
 
   return db
@@ -102,7 +105,7 @@ func CreateTweets(username string, tweets []twitter.Tweet) {
   db := DB()
   defer db.Close()
 
-  stmt, prepareError := db.Prepare("INSERT INTO tweets VALUES(?, ?, ?)")
+  stmt, prepareError := db.Prepare("INSERT OR REPLACE INTO tweets VALUES(?, ?, ?)")
 
   if prepareError != nil {
     panic(prepareError)
@@ -139,15 +142,19 @@ func SaveTerms(username string, termsDictionary map[string]*twitter.TermDoc) {
 
 func Clear() {
   db := DB()
-  _, execErr1 := db.Exec("DELETE FROM tweets")
-  _, execErr2 := db.Exec("DELETE FROM tweet_terms")
 
-  if execErr1 != nil {
-    panic(execErr1)
+  cleanUpStmts := []string{
+    "DELETE FROM tweets",
+    "DELETE FROM tweet_terms",
+    "DROP INDEX unique_tweet_idx",
   }
 
-  if execErr2 != nil {
-    panic(execErr2)
+  for _, stmt := range cleanUpStmts {
+    _, stmtError := db.Exec(stmt)
+
+    if stmtError != nil {
+      panic(stmtError)
+    }
   }
 }
 

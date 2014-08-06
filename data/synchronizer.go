@@ -26,7 +26,7 @@ func extractTermsForUser(username string, quit chan<- int) {
   termsDictionary := map[string]*twitter.TermDoc{}
 
   repository.TweetsByUser(username, func(tweet *twitter.Tweet) {
-    terms := strings.Split(tweet.Text, " ")
+    terms := strings.Split(normalizeText(tweet.Text), " ")
 
     for _, term := range terms {
       _, ok := termsDictionary[term]
@@ -42,4 +42,8 @@ func extractTermsForUser(username string, quit chan<- int) {
   repository.SaveTerms(username, termsDictionary)
 
   quit <- 1
+}
+
+func normalizeText(text string) string {
+  return strings.ToLower(text)
 }

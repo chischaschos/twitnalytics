@@ -39,3 +39,9 @@ func ExampleSyncTweets() {
   // &{4 not 2}
   // &{5 that 1}
 }
+
+func ExampleNormalizeText() {
+  fmt.Println(normalizeText("ASD"))
+  // Output:
+  // asd
+}
