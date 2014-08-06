@@ -9,12 +9,13 @@ import (
   "os"
   "os/user"
   "path/filepath"
+  "strings"
 )
 
-var username string
+var usernames string
 
 func init() {
-  flag.StringVar(&username, "u", "the_user_name", "the user name whose timeline we are gonna play with")
+  flag.StringVar(&usernames, "u", "user1,user2,user3", "the user names whose timelines we are gonna play with")
 
   repository.Settings().StorePath = settingsPath()
 }
@@ -67,27 +68,48 @@ func authValues() (string, string) {
 func main() {
   flag.Parse()
 
-  if username == "the_user_name" {
+  if usernames == "user1,user2,user3" {
     flag.PrintDefaults()
   } else {
 
     consumerKey, consumerSecret := authValues()
-
     twitter := tw.New(consumerKey, consumerSecret)
-    tweets, pullError := twitter.PullTweetsOf(username)
 
-    fmt.Println(pullError)
+    tweetsChannel := make(chan map[string][]tw.Tweet)
+    splitUsernames := strings.Split(usernames, ",")
 
-    for _, tweet := range tweets {
-      fmt.Println(tweet)
+    for _, username := range splitUsernames {
+      go twitter.PullTweetsOf(username, tweetsChannel)
     }
 
-    if len(tweets) > 0 {
-      data.SyncTweets(username, tweets)
-    }
+    usersWithTweets := joinTweets(tweetsChannel, len(splitUsernames))
 
-    repository.TermsByUser(username, func(termDoc *tw.TermDoc) {
-      fmt.Printf("%v\n", termDoc)
-    })
+    for _, userWithTweets := range usersWithTweets {
+      for username, tweets := range userWithTweets {
+
+        if len(tweets) > 0 {
+          data.SyncTweets(username, tweets)
+        }
+
+        repository.TermsByUser(username, func(termDoc *tw.TermDoc) {
+          fmt.Printf("%v\n", termDoc)
+        })
+      }
+    }
+  }
+}
+
+func joinTweets(tweetsChannel chan map[string][]tw.Tweet, usersCount int) []map[string][]tw.Tweet {
+  var usersWithTweets []map[string][]tw.Tweet
+
+  for {
+    select {
+    case message := <-tweetsChannel:
+      usersWithTweets = append(usersWithTweets, message)
+
+      if len(usersWithTweets) == usersCount {
+        return usersWithTweets
+      }
+    }
   }
 }

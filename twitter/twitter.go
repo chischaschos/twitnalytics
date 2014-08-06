@@ -6,6 +6,7 @@ import (
   "errors"
   "bytes"
   "net/http"
+  "fmt"
 )
 
 const defaultAuthenticationEndpoint = "https://api.twitter.com/oauth2/token"
@@ -45,17 +46,21 @@ type TermDoc struct {
 }
 
 // PullTweetsOf the retrieves a parameter user tweets
-func (twitter *Twitter) PullTweetsOf(user string) ([]Tweet, error) {
+func (twitter *Twitter) PullTweetsOf(user string, tweetsChannel chan map[string][]Tweet) {
+  fmt.Println("Pulling tweets of ", user)
+
   authError := twitter.authenticate()
 
   if authError != nil {
-    return nil, authError
+    fmt.Println(authError)
+    return
   }
 
   request, requestCreationError := http.NewRequest("GET", twitter.endpoints.tweets + "?screen_name=" + user, nil)
 
   if requestCreationError != nil {
-    return nil, requestCreationError
+    fmt.Println(requestCreationError)
+    return
   }
 
   request.Header.Add("Authorization", "Bearer " + twitter.accessToken)
@@ -64,7 +69,8 @@ func (twitter *Twitter) PullTweetsOf(user string) ([]Tweet, error) {
   response, requestError := client.Do(request)
 
   if requestError != nil {
-    return nil, requestError
+    fmt.Println(requestError)
+    return
   }
 
   var tweets []Tweet
@@ -72,10 +78,12 @@ func (twitter *Twitter) PullTweetsOf(user string) ([]Tweet, error) {
   jsonDecoderError := jsonDecoder.Decode(&tweets)
 
   if jsonDecoderError != nil {
-    return nil, jsonDecoderError
+    fmt.Println(jsonDecoderError)
+    return
   }
 
-  return tweets, nil
+  fmt.Println("Sending tweets of ", user)
+  tweetsChannel <- map[string][]Tweet{user: tweets}
 }
 // New creates a new Twitter client
 func New(consumerKey, consumerSecret string) *Twitter {

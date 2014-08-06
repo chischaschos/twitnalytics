@@ -11,7 +11,7 @@ func SyncTweets(username string, tweets []twitter.Tweet) {
 
   quit := make(chan int)
 
-  // The idea here will be to extracts chunks of terms one chunk per goroutine
+  // TODO: Extract chunks of terms one chunk per goroutine
   go extractTermsForUser(username, quit)
 
   for {
