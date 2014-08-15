@@ -75,41 +75,31 @@ func main() {
     consumerKey, consumerSecret := authValues()
     twitter := tw.New(consumerKey, consumerSecret)
 
-    tweetsChannel := make(chan map[string][]tw.Tweet)
+    tweetsChannel := make(chan *tw.User)
     splitUsernames := strings.Split(usernames, ",")
+    usersCount := len(splitUsernames)
+    messagesCount := 0
 
     for _, username := range splitUsernames {
       go twitter.PullTweetsOf(username, tweetsChannel)
     }
 
-    usersWithTweets := joinTweets(tweetsChannel, len(splitUsernames))
+    main: for {
+      select {
+      case twitterUser := <-tweetsChannel:
+        messagesCount++
+        data.SyncTweets(twitterUser.Name, twitterUser.Tweets)
 
-    for _, userWithTweets := range usersWithTweets {
-      for username, tweets := range userWithTweets {
-
-        if len(tweets) > 0 {
-          data.SyncTweets(username, tweets)
+        if messagesCount == usersCount {
+          break main
         }
-
-        repository.TermsByUser(username, func(termDoc *tw.TermDoc) {
-          fmt.Printf("%v\n", termDoc)
-        })
       }
     }
-  }
-}
 
-func joinTweets(tweetsChannel chan map[string][]tw.Tweet, usersCount int) []map[string][]tw.Tweet {
-  var usersWithTweets []map[string][]tw.Tweet
-
-  for {
-    select {
-    case message := <-tweetsChannel:
-      usersWithTweets = append(usersWithTweets, message)
-
-      if len(usersWithTweets) == usersCount {
-        return usersWithTweets
-      }
+    for _, username := range splitUsernames {
+      repository.TermsByUser(username, func(termDoc *tw.TermDoc) {
+        fmt.Printf("%v\n", termDoc)
+      })
     }
   }
 }

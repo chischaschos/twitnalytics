@@ -45,8 +45,13 @@ type TermDoc struct {
   Count int
 }
 
+type User struct {
+  Name string
+  Tweets []Tweet
+}
+
 // PullTweetsOf the retrieves a parameter user tweets
-func (twitter *Twitter) PullTweetsOf(user string, tweetsChannel chan map[string][]Tweet) {
+func (twitter *Twitter) PullTweetsOf(user string, tweetsChannel chan *User) {
   fmt.Println("Pulling tweets of ", user)
 
   authError := twitter.authenticate()
@@ -83,7 +88,7 @@ func (twitter *Twitter) PullTweetsOf(user string, tweetsChannel chan map[string]
   }
 
   fmt.Println("Sending tweets of ", user)
-  tweetsChannel <- map[string][]Tweet{user: tweets}
+  tweetsChannel <- &User{Name: user, Tweets: tweets}
 }
 // New creates a new Twitter client
 func New(consumerKey, consumerSecret string) *Twitter {

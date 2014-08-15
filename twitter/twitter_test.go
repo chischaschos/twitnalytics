@@ -55,17 +55,23 @@ func ExamplePullTweetsOf() {
   }))
 
   twitter := Twitter{consumerKey: "ASD", consumerSecret: "ASD", endpoints: Endpoints{authServer.URL, tweetsServer.URL}}
-  tweets, pullError := twitter.PullTweetsOf("chischaschos")
+  tweetsChannel := make(chan *User)
+  go twitter.PullTweetsOf("chischaschos", tweetsChannel)
 
-  fmt.Println("Error: ", pullError)
+  outside: for {
+    select {
+    case twitterUser := <-tweetsChannel:
+      for _, tweet := range twitterUser.Tweets {
+        fmt.Println(tweet)
+      }
 
-  for _, tweet := range tweets {
-    fmt.Println(tweet)
+      break outside
+    }
   }
 
   // Output:
-  // Error:  <nil>
+  // Pulling tweets of  chischaschos
+  // Sending tweets of  chischaschos
   // {t1 496697195907665921}
   // {t3 496697195907665921}
-
 }
