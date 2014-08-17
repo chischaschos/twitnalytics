@@ -34,33 +34,9 @@ func DB() *sql.DB {
   return db
 }
 
-func dbName() string {
-  var dbName string
-
-  if os.Getenv("TWITNALYTICS-ENV") == "test" {
-    dbName = "../twitnalytics-db-test"
-
-  } else {
-    currentUser, userError := user.Current()
-
-    if userError != nil {
-      panic(userError)
-    }
-
-    dbName =  currentUser.HomeDir + "/.twitnalytics-db"
-  }
-
-  path, filepathError := filepath.Abs(dbName)
-
-  if filepathError != nil {
-    panic(filepathError)
-  }
-
-  return path
-}
-
 func TweetsByUser(username string, callback func(*twitter.Tweet))  {
   db := DB()
+  defer db.Close()
 
   rows, selectError := db.Query("SELECT id, text FROM tweets WHERE username = ?", username);
 
@@ -83,6 +59,8 @@ func TweetsByUser(username string, callback func(*twitter.Tweet))  {
 
 func TermsByUser(username string, callback func(*twitter.TermDoc)) {
   db := DB()
+  defer db.Close()
+
   rows, selectError := db.Query("SELECT tweet_id, term, count FROM tweet_terms WHERE username = ?", username);
 
   if selectError != nil {
@@ -142,6 +120,7 @@ func SaveTerms(username string, termsDictionary map[string]*twitter.TermDoc) {
 
 func Clear() {
   db := DB()
+  defer db.Close()
 
   cleanUpStmts := []string{
     "DELETE FROM tweets",
@@ -160,6 +139,8 @@ func Clear() {
 
 func TotalTweets() int {
   db := DB()
+  defer db.Close()
+
   stmt, countError := db.Query("SELECT count(*) from tweets")
 
   if countError != nil {
@@ -173,3 +154,30 @@ func TotalTweets() int {
 
   return count
 }
+
+func dbName() string {
+  var dbName string
+
+  if os.Getenv("TWITNALYTICS-ENV") == "test" {
+    dbName = "../twitnalytics-db-test"
+
+  } else {
+    currentUser, userError := user.Current()
+
+    if userError != nil {
+      panic(userError)
+    }
+
+    dbName =  currentUser.HomeDir + "/.twitnalytics-db"
+  }
+
+  path, filepathError := filepath.Abs(dbName)
+
+  if filepathError != nil {
+    panic(filepathError)
+  }
+
+  return path
+}
+
+
